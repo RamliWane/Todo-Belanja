@@ -12,14 +12,14 @@ type Book = {
     description: string;
 };
 
-const db = SQLite.openDatabaseSync("books.db", {
+const db = SQLite.openDatabaseSync("makanan.db", {
     useNewConnection: true,
 });
 
 export default function MarketPage() {
     const [editId, setEditId] = useState<number | null>(null);
     const [visible, setVisible] = useState(false);
-    const [books, setBooks] = useState<Book[]>([]);
+    const [makanan, setMakanan] = useState<Book[]>([]);
 
 
 
@@ -34,26 +34,26 @@ export default function MarketPage() {
     async function initDatabase() {
         try {
             await db.execAsync(
-                `CREATE TABLE IF NOT EXISTS books (
+                `CREATE TABLE IF NOT EXISTS makanan (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     title TEXT NOT NULL,
                     author TEXT NOT NULL,
                     category TEXT NOT NULL,
                     year INTEGER NOT NULL,
-                    description TEXT NOT NULL,
-                )`,
+                    description TEXT NOT NULL
+                )`
             );
         } catch (error) {
             console.error("Error initializing database:", error);
         }
     }
 
-    async function loadBooks() {
+    async function loadMakanan() {
         try {
             const results = await db.getAllAsync(
-                `SELECT * FROM books order by id desc`,
+                `SELECT * FROM makanan order by id desc`,
             );
-            setBooks(results as []);
+            setMakanan(results as []);
         } catch (error) {
             Alert.alert("gagal memuat data buku");
         }
@@ -62,16 +62,16 @@ export default function MarketPage() {
 
     useEffect(() => {
         initDatabase();
-        loadBooks();
+        loadMakanan();
     }, []);
 
-    async function AddBooks() {
+    async function AddMakanan() {
         try {
 
             const year = parseInt(formdata.year);
             if (editId) {
                 await db.runAsync(
-                    `UPDATE books SET title = ?, author = ?, category = ?, year = ?, description = ?, image = ? WHERE id = ?`,
+                    `UPDATE makanan SET title = ?, author = ?, category = ?, year = ?, description = ? WHERE id = ?`,
                     [
                         formdata.title,
                         formdata.author,
@@ -81,10 +81,10 @@ export default function MarketPage() {
                         editId.toString(),
                     ],
                 );
-                const updatedBooks = books.map((book) => {
-                    if (book.id === editId) {
+                const updatedMakanan = makanan.map((item) => {
+                    if (item.id === editId) {
                         return {
-                            ...book,
+                            ...item,
                             title: formdata.title,
                             author: formdata.author,
                             category: formdata.category,
@@ -92,13 +92,13 @@ export default function MarketPage() {
                             description: formdata.description,
                         }
                     }
-                    return book;
+                    return item;
                 });
-                setBooks(updatedBooks);
+                setMakanan(updatedMakanan);
                 setEditId(null);
             } else {
                 await db.runAsync(
-                    `INSERT INTO books (title, author, category, year, description, image) VALUES (?, ?, ?, ?, ?, ?)`,
+                    `INSERT INTO makanan (title, author, category, year, description) VALUES (?, ?, ?, ?, ?)`,
                     [
                         formdata.title,
                         formdata.author,
@@ -108,7 +108,7 @@ export default function MarketPage() {
                     ],
                 );
 
-                const newBooks = {
+                const newMakanan = {
                     id: Date.now(),
                     title: formdata.title,
                     author: formdata.author,
@@ -116,31 +116,31 @@ export default function MarketPage() {
                     category: formdata.category,
                     description: formdata.description,
                 };
-                setBooks([...books, newBooks]);
+                setMakanan([...makanan, newMakanan]);
             }
         } catch (error) {
-            console.error("Error adding book:", error);
+            console.error("Error adding makanan:", error);
         }
     }
 
-    async function deleteBook(id: any) {
+    async function deleteMakanan(id: any) {
         try {
-            await db.runAsync(`DELETE FROM books WHERE id = ?`, [id]);
-            setBooks(books.filter((book) => book.id !== id));
+            await db.runAsync(`DELETE FROM makanan WHERE id = ?`, [id]);
+            setMakanan(makanan.filter((item) => item.id !== id));
         } catch (error) {
-            console.error("Error deleting book:", error);
+            console.error("Error deleting makanan:", error);
         }
     }
 
-    async function handleEdit(book: Book) {
+    async function handleEdit(makananItem: Book) {
         setFormdata({
-            title: book.title,
-            author: book.author,
-            category: book.category,
-            year: book.year.toString(),
-            description: book.description,
+            title: makananItem.title,
+            author: makananItem.author,
+            category: makananItem.category,
+            year: makananItem.year.toString(),
+            description: makananItem.description,
         });
-        setEditId(book.id);
+        setEditId(makananItem.id);
         setVisible(true);
     }
 
@@ -177,7 +177,7 @@ export default function MarketPage() {
 
             <View style={{ padding: 8 }}>
                 <FlatList
-                    data={books}
+                    data={makanan}
                     keyExtractor={(item) => item.id.toString()}
                     numColumns={2}
                     columnWrapperStyle={{ justifyContent: "space-between", gap: 8 }}
@@ -214,7 +214,7 @@ export default function MarketPage() {
                                 </Button>
                                 <Button
                                     mode="contained"
-                                    onPress={() => deleteBook(item.id)}
+                                    onPress={() => deleteMakanan(item.id)}
                                     buttonColor="red"
                                     style={{ flex: 1 }}
                                 >
@@ -226,9 +226,9 @@ export default function MarketPage() {
                 />
             </View>
             <Portal>
-                <Dialog visible={visible} onDismiss={() => setVisible(false)}>
+                <Dialog style={{ backgroundColor: "white" }} visible={visible} onDismiss={() => setVisible(false)}>
                     <Dialog.Icon icon="alert" />
-                    <Dialog.Title>This is a title</Dialog.Title>
+                    <Dialog.Title style={{ color: "black" , fontWeight: "bold"}}>Masukkan Deskripsi</Dialog.Title>
 
                     <Dialog.Content>
                         <View style={{ marginBottom: 10 }}>
@@ -239,7 +239,8 @@ export default function MarketPage() {
                                     setFormdata({ ...formdata, title: text });
                                 }}
                                 value={formdata.title}
-                                style={{ marginBottom: 12 }}
+                                textColor="black"
+                                style={{color: "black", marginBottom: 12, borderColor: "black", backgroundColor: "white" }}
                             />
 
                             <TextInput
@@ -249,7 +250,8 @@ export default function MarketPage() {
                                     setFormdata({ ...formdata, author: text });
                                 }}
                                 value={formdata.author}
-                                style={{ marginBottom: 12 }}
+                                textColor="black"
+                                style={{ marginBottom: 12, borderColor: "black", backgroundColor: "white" }}
                             />
 
                             <TextInput
@@ -259,7 +261,8 @@ export default function MarketPage() {
                                     setFormdata({ ...formdata, category: text });
                                 }}
                                 value={formdata.category}
-                                style={{ marginBottom: 12 }}
+                                textColor="black"
+                                style={{ marginBottom: 12, borderColor: "black", backgroundColor: "white" }}
                             />
                             <TextInput
                                 label={"Tahun"}
@@ -268,8 +271,9 @@ export default function MarketPage() {
                                     setFormdata({ ...formdata, year: text });
                                 }}
                                 value={formdata.year}
+                                textColor="black"
                                 keyboardType="number-pad"
-                                style={{ marginBottom: 12 }}
+                                style={{ marginBottom: 12, borderColor: "black", backgroundColor: "white" }}
                             />
 
                             <TextInput
@@ -281,7 +285,8 @@ export default function MarketPage() {
                                 }}
                                 value={formdata.description}
                                 numberOfLines={3}
-                                style={{ marginBottom: 12 }}
+                                textColor="black"
+                                style={{ marginBottom: 12, borderColor: "black", backgroundColor: "white" }}
                             />
                         </View>
                     </Dialog.Content>
@@ -290,7 +295,7 @@ export default function MarketPage() {
                         <Button
                             onPress={() => {
                                 setVisible(false);
-                                AddBooks();
+                                AddMakanan();
                             }}
                         >
                             Save
