@@ -3,44 +3,38 @@ import { Alert, FlatList, View } from "react-native";
 import { Appbar, Button, Card, TextInput, Dialog, Portal, Text } from "react-native-paper";
 import * as SQLite from "expo-sqlite";
 
-type Book = {
+type Belanja = {
     id: number;
     title: string;
-    author: string;
     category: string;
-    year: number;
-    description: string;
+    harga: number;
 };
 
-const db = SQLite.openDatabaseSync("makanan.db", {
+const db = SQLite.openDatabaseSync("belanja.db", {
     useNewConnection: true,
 });
 
 export default function MarketPage() {
     const [editId, setEditId] = useState<number | null>(null);
     const [visible, setVisible] = useState(false);
-    const [makanan, setMakanan] = useState<Book[]>([]);
+    const [belanja, setBelanja] = useState<Belanja[]>([]);
 
 
 
     const [formdata, setFormdata] = useState({
         title: "",
-        author: "",
         category: "",
-        year: "",
-        description: "",
+        harga: "",
     });
 
     async function initDatabase() {
         try {
             await db.execAsync(
-                `CREATE TABLE IF NOT EXISTS makanan (
+                `CREATE TABLE IF NOT EXISTS belanja (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     title TEXT NOT NULL,
-                    author TEXT NOT NULL,
                     category TEXT NOT NULL,
-                    year INTEGER NOT NULL,
-                    description TEXT NOT NULL
+                    harga INTEGER NOT NULL
                 )`
             );
         } catch (error) {
@@ -48,99 +42,90 @@ export default function MarketPage() {
         }
     }
 
-    async function loadMakanan() {
+    async function loadBelanja() {
         try {
             const results = await db.getAllAsync(
-                `SELECT * FROM makanan order by id desc`,
+                `SELECT * FROM belanja order by id desc`,
             );
-            setMakanan(results as []);
+            setBelanja(results as []);
+
         } catch (error) {
-            Alert.alert("gagal memuat data buku");
+            Alert.alert("gagal memuat data belanja");
         }
     }
 
 
     useEffect(() => {
         initDatabase();
-        loadMakanan();
+        loadBelanja();
     }, []);
 
-    async function AddMakanan() {
+    async function AddBelanja() {
         try {
 
-            const year = parseInt(formdata.year);
+            const harga = parseInt(formdata.harga);
             if (editId) {
                 await db.runAsync(
-                    `UPDATE makanan SET title = ?, author = ?, category = ?, year = ?, description = ? WHERE id = ?`,
+                    `UPDATE belanja SET title = ?,category = ?, harga = ? WHERE id = ?`,
                     [
                         formdata.title,
-                        formdata.author,
                         formdata.category,
-                        year,
-                        formdata.description,
-                        editId.toString(),
+                        harga,
+                        editId.toString()
                     ],
                 );
-                const updatedMakanan = makanan.map((item) => {
+                const updatedBelanja = belanja.map((item) => {
                     if (item.id === editId) {
                         return {
                             ...item,
                             title: formdata.title,
-                            author: formdata.author,
                             category: formdata.category,
-                            year: year,
-                            description: formdata.description,
+                            harga: harga
                         }
                     }
                     return item;
                 });
-                setMakanan(updatedMakanan);
+                setBelanja(updatedBelanja);
                 setEditId(null);
             } else {
                 await db.runAsync(
-                    `INSERT INTO makanan (title, author, category, year, description) VALUES (?, ?, ?, ?, ?)`,
+                    `INSERT INTO belanja (title, category, harga) VALUES (?, ?, ?)`,
                     [
                         formdata.title,
-                        formdata.author,
                         formdata.category,
-                        year,
-                        formdata.description,
+                        harga
                     ],
                 );
 
-                const newMakanan = {
+                const newBelanja = {
                     id: Date.now(),
                     title: formdata.title,
-                    author: formdata.author,
-                    year: year,
-                    category: formdata.category,
-                    description: formdata.description,
+                    harga: harga,
+                    category: formdata.category
                 };
-                setMakanan([...makanan, newMakanan]);
+                setBelanja([...belanja, newBelanja]);
             }
         } catch (error) {
-            console.error("Error adding makanan:", error);
+            console.error("Error adding belanja:", error);
         }
     }
 
-    async function deleteMakanan(id: any) {
+    async function deleteBelanja(id: any) {
         try {
-            await db.runAsync(`DELETE FROM makanan WHERE id = ?`, [id]);
-            setMakanan(makanan.filter((item) => item.id !== id));
+            await db.runAsync(`DELETE FROM belanja WHERE id = ?`, [id]);
+            setBelanja(belanja.filter((item) => item.id !== id));
         } catch (error) {
-            console.error("Error deleting makanan:", error);
+            console.error("Error deleting belanja:", error);
         }
     }
 
-    async function handleEdit(makananItem: Book) {
+    async function handleEdit(belanjaItem: Belanja) {
         setFormdata({
-            title: makananItem.title,
-            author: makananItem.author,
-            category: makananItem.category,
-            year: makananItem.year.toString(),
-            description: makananItem.description,
+            title: belanjaItem.title,
+            category: belanjaItem.category,
+            harga: belanjaItem.harga.toString()
         });
-        setEditId(makananItem.id);
+        setEditId(belanjaItem.id);
         setVisible(true);
     }
 
@@ -150,7 +135,7 @@ export default function MarketPage() {
                 <View style={{ flex: 1 }}>
                     <View style={{ flexDirection: "row", alignItems: "center" }}>
                         <Appbar.BackAction onPress={() => { }} color="white" />
-                        <Appbar.Content title="5 May" titleStyle={{ color: "white", fontWeight: "bold" }} />
+                        <Appbar.Content title="Hari Ini" titleStyle={{ color: "white", fontWeight: "bold" }} />
                     </View>
 
                     <View style={{ flexDirection: "row", marginBottom: 10, justifyContent: "space-between", alignItems: "center", paddingHorizontal: 16, marginTop: 8 }}>
@@ -167,9 +152,8 @@ export default function MarketPage() {
                             onPress={() => {
                                 setVisible(true);
                             }}
-                            color="white"
+                            color="gray"
                             style={{ backgroundColor: "white", margin: 0 }}
-                            iconColor="#5b4ccc"
                         />
                     </View>
                 </View>
@@ -177,49 +161,50 @@ export default function MarketPage() {
 
             <View style={{ padding: 8 }}>
                 <FlatList
-                    data={makanan}
+                    data={belanja}
                     keyExtractor={(item) => item.id.toString()}
-                    numColumns={2}
-                    columnWrapperStyle={{ justifyContent: "space-between", gap: 8 }}
                     renderItem={({ item }) => (
-                        <Card style={{ width: "48%", padding: 8, marginBottom: 8 }}>
-                            <View style={{ padding: 8, gap: 5 }}>
-                                <Text
-                                    style={{ fontSize: 15, fontWeight: "bold", color: "black" }}
-                                >
-                                    {item.title}
-                                </Text>
-                                <Text
-                                    style={{ fontSize: 10, fontWeight: "bold", color: "black" }}
-                                >
-                                    {item.author} - {item.year} - {item.category}
-                                </Text>
-                                <Text
-                                    style={{ fontSize: 10, fontWeight: "bold", color: "black" }}
-                                >
-                                    {item.description}
-                                </Text>
-                            </View>
+                        <Card style={{ width: "auto", padding: 8, marginBottom: 8, backgroundColor: "#e9e9e9", shadowColor: "#000", shadowOffset: { width: 2, height: 5 } }}>
+                            <View style={{flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8}}>
+                                <View style={{ padding: 8, gap: 5, paddingLeft: 10, flexDirection: "column", alignItems: "flex-start" }}>
+                                    <Text
+                                        style={{ fontSize: 18, fontWeight: "bold", color: "black" }}
+                                    >
+                                        {item.title}
+                                    </Text>
 
-                            <View style={{ flexDirection: "column", gap: 7, marginTop: 10 }}>
-                                <Button
-                                    mode="contained"
-                                    onPress={() => {
-                                        handleEdit(item);
-                                    }}
-                                    buttonColor="#007aff"
-                                    style={{ flex: 1 }}
-                                >
-                                    Edit
-                                </Button>
-                                <Button
-                                    mode="contained"
-                                    onPress={() => deleteMakanan(item.id)}
-                                    buttonColor="red"
-                                    style={{ flex: 1 }}
-                                >
-                                    Delete
-                                </Button>
+                                    <Text
+                                        style={{ fontSize: 14, fontWeight: "semibold", color: "black" }}
+                                    >
+                                        Category : {item.category}
+                                    </Text>
+                                    <Text
+                                        style={{ fontSize: 20, fontWeight: "bold", color: "#82093b" }}
+                                    >
+                                        Rp {item.harga}
+                                    </Text>
+
+                                </View>
+                                <View style={{ flexDirection: "row", gap: 8 }}>
+                                    <Button
+                                        mode="contained"
+                                        onPress={() => {
+                                            handleEdit(item);
+                                        }}
+                                        buttonColor="#1189b5"
+                                        textColor="white"
+                                    >
+                                        Edit
+                                    </Button>
+                                    <Button
+                                        mode="contained"
+                                        onPress={() => deleteBelanja(item.id)}
+                                        buttonColor="#82093b"
+                                        textColor="white"
+                                    >
+                                        Delete
+                                    </Button>
+                                </View>
                             </View>
                         </Card>
                     )}
@@ -228,32 +213,19 @@ export default function MarketPage() {
             <Portal>
                 <Dialog style={{ backgroundColor: "white" }} visible={visible} onDismiss={() => setVisible(false)}>
                     <Dialog.Icon icon="alert" />
-                    <Dialog.Title style={{ color: "black" , fontWeight: "bold"}}>Masukkan Deskripsi</Dialog.Title>
-
+                    <Dialog.Title style={{ color: "black", fontWeight: "bold" }}>Masukkan Deskripsi</Dialog.Title>
                     <Dialog.Content>
                         <View style={{ marginBottom: 10 }}>
                             <TextInput
-                                label={"judul"}
+                                label={"Nama Makanan"}
                                 mode={"outlined"}
                                 onChangeText={(text) => {
                                     setFormdata({ ...formdata, title: text });
                                 }}
                                 value={formdata.title}
                                 textColor="black"
-                                style={{color: "black", marginBottom: 12, borderColor: "black", backgroundColor: "white" }}
+                                style={{ color: "black", marginBottom: 12, borderColor: "black", backgroundColor: "white" }}
                             />
-
-                            <TextInput
-                                label={"Penulis"}
-                                mode={"outlined"}
-                                onChangeText={(text) => {
-                                    setFormdata({ ...formdata, author: text });
-                                }}
-                                value={formdata.author}
-                                textColor="black"
-                                style={{ marginBottom: 12, borderColor: "black", backgroundColor: "white" }}
-                            />
-
                             <TextInput
                                 label={"Kategori"}
                                 mode={"outlined"}
@@ -265,29 +237,17 @@ export default function MarketPage() {
                                 style={{ marginBottom: 12, borderColor: "black", backgroundColor: "white" }}
                             />
                             <TextInput
-                                label={"Tahun"}
+                                label={"Harga"}
                                 mode={"outlined"}
                                 onChangeText={(text) => {
-                                    setFormdata({ ...formdata, year: text });
+                                    setFormdata({ ...formdata, harga: text });
                                 }}
-                                value={formdata.year}
+                                value={formdata.harga}
                                 textColor="black"
-                                keyboardType="number-pad"
+                                keyboardType="numeric"
                                 style={{ marginBottom: 12, borderColor: "black", backgroundColor: "white" }}
                             />
 
-                            <TextInput
-                                label={"Deskripsi"}
-                                mode={"outlined"}
-                                multiline
-                                onChangeText={(text) => {
-                                    setFormdata({ ...formdata, description: text });
-                                }}
-                                value={formdata.description}
-                                numberOfLines={3}
-                                textColor="black"
-                                style={{ marginBottom: 12, borderColor: "black", backgroundColor: "white" }}
-                            />
                         </View>
                     </Dialog.Content>
                     <Dialog.Actions>
@@ -295,7 +255,7 @@ export default function MarketPage() {
                         <Button
                             onPress={() => {
                                 setVisible(false);
-                                AddMakanan();
+                                AddBelanja();
                             }}
                         >
                             Save
