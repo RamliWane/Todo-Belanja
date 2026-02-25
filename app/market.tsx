@@ -3,11 +3,11 @@ import { Alert, FlatList, View } from "react-native";
 import { Appbar, Button, Card, TextInput, Dialog, Portal, Text } from "react-native-paper";
 import * as SQLite from "expo-sqlite";
 
-type Belanja = {
+type Book = {
     id: number;
     title: string;
     category: string;
-    harga: number;
+    year: number;
 };
 
 const db = SQLite.openDatabaseSync("belanja.db", {
@@ -17,14 +17,14 @@ const db = SQLite.openDatabaseSync("belanja.db", {
 export default function MarketPage() {
     const [editId, setEditId] = useState<number | null>(null);
     const [visible, setVisible] = useState(false);
-    const [belanja, setBelanja] = useState<Belanja[]>([]);
+    const [belanja, setBelanja] = useState<Book[]>([]);
 
 
 
     const [formdata, setFormdata] = useState({
         title: "",
         category: "",
-        harga: "",
+        year: "",
     });
 
     async function initDatabase() {
@@ -34,7 +34,7 @@ export default function MarketPage() {
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     title TEXT NOT NULL,
                     category TEXT NOT NULL,
-                    harga INTEGER NOT NULL
+                    year INTEGER NOT NULL
                 )`
             );
         } catch (error) {
@@ -50,7 +50,7 @@ export default function MarketPage() {
             setBelanja(results as []);
 
         } catch (error) {
-            Alert.alert("gagal memuat data belanja");
+            Alert.alert("gagal memuat data buku");
         }
     }
 
@@ -63,14 +63,14 @@ export default function MarketPage() {
     async function AddBelanja() {
         try {
 
-            const harga = parseInt(formdata.harga);
+            const year = parseInt(formdata.year);
             if (editId) {
                 await db.runAsync(
-                    `UPDATE belanja SET title = ?,category = ?, harga = ? WHERE id = ?`,
+                    `UPDATE belanja SET title = ?,category = ?, year = ? WHERE id = ?`,
                     [
                         formdata.title,
                         formdata.category,
-                        harga,
+                        year,
                         editId.toString()
                     ],
                 );
@@ -80,7 +80,7 @@ export default function MarketPage() {
                             ...item,
                             title: formdata.title,
                             category: formdata.category,
-                            harga: harga
+                            year: year
                         }
                     }
                     return item;
@@ -89,18 +89,18 @@ export default function MarketPage() {
                 setEditId(null);
             } else {
                 await db.runAsync(
-                    `INSERT INTO belanja (title, category, harga) VALUES (?, ?, ?)`,
+                    `INSERT INTO belanja (title, category, year) VALUES (?, ?, ?)`,
                     [
                         formdata.title,
                         formdata.category,
-                        harga
+                        year
                     ],
                 );
 
                 const newBelanja = {
                     id: Date.now(),
                     title: formdata.title,
-                    harga: harga,
+                    year: year,
                     category: formdata.category
                 };
                 setBelanja([...belanja, newBelanja]);
@@ -119,11 +119,11 @@ export default function MarketPage() {
         }
     }
 
-    async function handleEdit(belanjaItem: Belanja) {
+    async function handleEdit(belanjaItem: Book) {
         setFormdata({
             title: belanjaItem.title,
             category: belanjaItem.category,
-            harga: belanjaItem.harga.toString()
+            year: belanjaItem.year.toString()
         });
         setEditId(belanjaItem.id);
         setVisible(true);
@@ -168,7 +168,7 @@ export default function MarketPage() {
                             <View style={{flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8}}>
                                 <View style={{ padding: 8, gap: 5, paddingLeft: 10, flexDirection: "column", alignItems: "flex-start" }}>
                                     <Text
-                                        style={{ fontSize: 18, fontWeight: "bold", color: "black" }}
+                                        style={{ fontSize: 18, fontWeight: "semibold", color: "black" }}
                                     >
                                         {item.title}
                                     </Text>
@@ -176,12 +176,12 @@ export default function MarketPage() {
                                     <Text
                                         style={{ fontSize: 14, fontWeight: "semibold", color: "black" }}
                                     >
-                                        Category : {item.category}
+                                        {item.category}
                                     </Text>
                                     <Text
-                                        style={{ fontSize: 20, fontWeight: "bold", color: "#82093b" }}
+                                        style={{ fontSize: 20, fontWeight: "semibold", color: "black" }}
                                     >
-                                        Rp {item.harga}
+                                        {item.year}
                                     </Text>
 
                                 </View>
@@ -240,9 +240,9 @@ export default function MarketPage() {
                                 label={"Harga"}
                                 mode={"outlined"}
                                 onChangeText={(text) => {
-                                    setFormdata({ ...formdata, harga: text });
+                                    setFormdata({ ...formdata, year: text });
                                 }}
-                                value={formdata.harga}
+                                value={formdata.year}
                                 textColor="black"
                                 keyboardType="numeric"
                                 style={{ marginBottom: 12, borderColor: "black", backgroundColor: "white" }}
